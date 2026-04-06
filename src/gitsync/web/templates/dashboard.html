@@ -1,101 +1,138 @@
 {% extends "base.html" %}
 
 {% block title %}GitSync Dashboard{% endblock %}
+{% block page_title %}System Overview{% endblock %}
 
 {% block content %}
-<section class="grid gap-4 md:grid-cols-3">
-  <div class="glass-panel rounded-3xl p-5">
-    <p class="label">Total mirrored events</p>
-    <p class="mt-3 text-4xl font-semibold text-white">{{ snapshot.total_events }}</p>
-    <p class="mt-2 text-sm text-slate-400">Stored in SQLite and used by the activity feed.</p>
+<!-- Stats Row -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div class="glass-panel p-8 rounded-lg relative overflow-hidden group hover:bg-white/5 transition-all">
+    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+      <span class="material-symbols-outlined text-6xl">event_repeat</span>
+    </div>
+    <p class="text-on-surface-variant font-label text-sm uppercase tracking-widest">Total mirrored events</p>
+    <div class="mt-4">
+      <span class="text-5xl font-headline font-bold text-white">{{ snapshot.total_events }}</span>
+    </div>
   </div>
-  <div class="glass-panel rounded-3xl p-5">
-    <p class="label">Recent syncs</p>
-    <p class="mt-3 text-4xl font-semibold text-white">{{ recent_runs|length }}</p>
-    <p class="mt-2 text-sm text-slate-400">Most recent executions tracked in the dashboard.</p>
+  <div class="glass-panel p-8 rounded-lg relative overflow-hidden group hover:bg-white/5 transition-all">
+    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+      <span class="material-symbols-outlined text-6xl">commit</span>
+    </div>
+    <p class="text-on-surface-variant font-label text-sm uppercase tracking-widest">Commits synced</p>
+    <div class="mt-4">
+      <span class="text-5xl font-headline font-bold text-white">{{ commit_count }}</span>
+    </div>
   </div>
-  <div class="glass-panel rounded-3xl p-5">
-    <p class="label">Next scheduled sync</p>
-    <p class="mt-3 text-2xl font-semibold text-white">{{ next_sync_at.strftime('%Y-%m-%d %H:%M UTC') }}</p>
-    <p class="mt-2 text-sm text-slate-400">Based on the default GitHub Actions schedule.</p>
+  <div class="glass-panel p-8 rounded-lg relative overflow-hidden group hover:bg-white/5 transition-all">
+    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+      <span class="material-symbols-outlined text-6xl">merge</span>
+    </div>
+    <p class="text-on-surface-variant font-label text-sm uppercase tracking-widest">MRs merged</p>
+    <div class="mt-4">
+      <span class="text-5xl font-headline font-bold text-white">{{ mr_count }}</span>
+    </div>
   </div>
 </section>
 
-<section class="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-  <div class="glass-panel rounded-3xl p-5">
-    <div class="flex items-center justify-between gap-4">
-      <div>
-        <p class="label">30-day activity</p>
-        <h2 class="mt-2 text-2xl font-semibold text-white">Contribution rhythm</h2>
+<!-- Chart & Status -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+  <!-- 30-day activity -->
+  <div class="lg:col-span-2 glass-panel p-8 rounded-lg min-h-[380px] flex flex-col">
+    <div class="flex justify-between items-center mb-10">
+      <h3 class="font-headline text-lg font-semibold flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">bar_chart</span>
+        30-day activity
+      </h3>
+      <div class="text-xs text-on-surface-variant flex gap-4">
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> Commits</span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span> MRs</span>
       </div>
-      <p class="text-sm text-slate-400">{{ snapshot.daily_activity|length }} days</p>
     </div>
-    <div class="mt-8 grid grid-cols-10 gap-2 sm:grid-cols-15 lg:grid-cols-30">
+    <div class="flex-1 flex items-end justify-between gap-1 h-48">
       {% for item in snapshot.daily_activity %}
-      {% set height = 18 if max_count == 0 else 18 + ((item.count * 112) // max_count) %}
-      <div class="group flex flex-col items-center justify-end gap-2">
-        <div class="w-full rounded-full bg-slate-800/80 px-1 pt-1">
-          <div class="bar-fill w-full rounded-full" style="height: {{ height }}px"></div>
-        </div>
-        <span class="hidden text-[10px] text-slate-500 group-hover:block">{{ item.count }}</span>
-      </div>
+      {% set height = 8 if max_count == 0 else 8 + ((item.count * 92) // max_count) %}
+      <div class="w-full bg-gradient-to-t from-primary/20 to-primary rounded-t-sm transition-all duration-500 hover:opacity-80 cursor-pointer bar-fill" style="height: {{ height }}%"></div>
       {% endfor %}
+    </div>
+    <div class="mt-4 flex justify-between text-[10px] uppercase tracking-tighter text-on-surface-variant/40 font-label">
+      <span>30 days ago</span>
+      <span>Today</span>
     </div>
   </div>
 
+  <!-- Sync Status -->
   <div id="sync-status">
     {% include "partials/sync_status.html" %}
   </div>
 </section>
 
-<section class="grid gap-6 lg:grid-cols-[1fr_1fr]">
-  <div class="glass-panel rounded-3xl p-5">
-    <div class="flex items-center justify-between gap-4">
-      <div>
-        <p class="label">Recent activity</p>
-        <h2 class="mt-2 text-2xl font-semibold text-white">Last 10 mirrored events</h2>
-      </div>
-      <a href="/activity" class="text-sm text-indigo-300 transition hover:text-indigo-200">Open history</a>
+<!-- Recent Activity & Execution History -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  <!-- Recent Activity -->
+  <div class="glass-panel p-0 rounded-lg overflow-hidden">
+    <div class="px-8 py-6 border-b border-white/5 flex justify-between items-center">
+      <h3 class="font-headline text-lg font-semibold">Recent activity</h3>
+      <a href="/activity" class="text-xs text-primary hover:underline">View all</a>
     </div>
-    <div class="mt-6 space-y-3">
+    <div class="divide-y divide-white/5">
       {% for record in snapshot.recent_events %}
-      <article class="rounded-2xl border border-white/8 bg-slate-950/40 p-4">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-xs uppercase tracking-[0.24em] text-indigo-300/80">{{ record.event_type }}</p>
-            <h3 class="mt-2 text-base font-medium text-white">{{ record.title }}</h3>
-            <p class="mt-2 text-sm text-slate-400">{{ record.project_name }}</p>
+      <div class="px-8 py-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full {% if record.event_type == 'mr-merged' %}bg-tertiary/10{% else %}bg-primary/10{% endif %} flex items-center justify-center">
+            <span class="material-symbols-outlined {% if record.event_type == 'mr-merged' %}text-tertiary{% else %}text-primary{% endif %} text-xl">{% if record.event_type == 'mr-merged' %}merge{% else %}commit{% endif %}</span>
           </div>
-          <time class="text-xs text-slate-500">{{ record.event_timestamp.strftime('%Y-%m-%d %H:%M') }}</time>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-on-surface truncate max-w-[280px]">{{ record.title }}</p>
+            <p class="text-xs text-on-surface-variant">{{ record.project_name }}</p>
+          </div>
         </div>
-      </article>
+        <div class="text-right flex-shrink-0 ml-4">
+          <span class="block text-xs font-bold {% if record.event_type == 'mr-merged' %}text-tertiary{% else %}text-primary{% endif %} uppercase tracking-tighter">{{ record.event_type }}</span>
+          <span class="block text-[10px] text-on-surface-variant mt-1">{{ record.event_timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+        </div>
+      </div>
       {% else %}
-      <p class="rounded-2xl border border-dashed border-white/10 p-4 text-sm text-slate-400">
+      <div class="px-8 py-8 text-center text-sm text-on-surface-variant">
         No activity mirrored yet. Run the first sync from the status card.
-      </p>
+      </div>
       {% endfor %}
     </div>
   </div>
 
-  <div class="glass-panel rounded-3xl p-5">
-    <p class="label">Recent runs</p>
-    <h2 class="mt-2 text-2xl font-semibold text-white">Execution history</h2>
-    <div class="mt-6 space-y-3">
-      {% for run in recent_runs %}
-      <article class="rounded-2xl border border-white/8 bg-slate-950/40 p-4">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-sm font-medium text-white">Run #{{ run.id }}</p>
-            <p class="mt-1 text-sm text-slate-400">{{ run.events_synced }} events mirrored</p>
-          </div>
-          <span class="status-pill status-{{ run.status }}">{{ run.status }}</span>
-        </div>
-      </article>
-      {% else %}
-      <p class="rounded-2xl border border-dashed border-white/10 p-4 text-sm text-slate-400">
-        No sync history available yet.
-      </p>
-      {% endfor %}
+  <!-- Execution History -->
+  <div class="glass-panel p-0 rounded-lg overflow-hidden">
+    <div class="px-8 py-6 border-b border-white/5">
+      <h3 class="font-headline text-lg font-semibold">Execution history</h3>
+    </div>
+    <div class="p-4">
+      <table class="w-full text-left">
+        <thead class="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-label">
+          <tr>
+            <th class="px-4 py-3 font-medium">Run ID</th>
+            <th class="px-4 py-3 font-medium">Status</th>
+            <th class="px-4 py-3 font-medium">Events</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5 text-sm">
+          {% for run in recent_runs %}
+          <tr class="hover:bg-white/5 transition-colors">
+            <td class="px-4 py-4 font-mono text-primary">#{{ run.id }}</td>
+            <td class="px-4 py-4">
+              <span class="flex items-center gap-2 {% if run.status == 'success' %}text-tertiary{% elif run.status == 'failed' %}text-error{% else %}text-yellow-400{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full {% if run.status == 'success' %}bg-tertiary dot-success{% elif run.status == 'failed' %}bg-error dot-error{% else %}bg-yellow-400 dot-running{% endif %}"></span>
+                {{ run.status|title }}
+              </span>
+            </td>
+            <td class="px-4 py-4 text-on-surface-variant">{{ run.events_synced }} items</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="px-4 py-8 text-center text-sm text-on-surface-variant">No sync history yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 </section>

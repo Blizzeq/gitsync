@@ -1,56 +1,117 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html class="dark" lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}GitSync{% endblock %}</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#c0c1ff",
+              "primary-container": "#8083ff",
+              secondary: "#ddb7ff",
+              tertiary: "#4edea3",
+              error: "#ffb4ab",
+              surface: "#101221",
+              "surface-dim": "#101221",
+              "surface-container-lowest": "#0b0d1b",
+              "surface-container-low": "#181b29",
+              "surface-container": "#1c1f2e",
+              "surface-container-high": "#272938",
+              "surface-container-highest": "#323444",
+              "on-surface": "#e0e1f6",
+              "on-surface-variant": "#c7c4d7",
+              "outline-variant": "#464554",
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "2rem",
+              xl: "3rem",
+              full: "9999px",
+            },
+            fontFamily: {
+              headline: ["Space Grotesk"],
+              body: ["Inter"],
+              label: ["Inter"],
+            },
+          },
+        },
+      }
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}" />
   </head>
-  <body class="min-h-screen bg-[var(--app-bg)] text-slate-100 antialiased">
-    <div class="relative min-h-screen overflow-hidden">
-      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.12),_transparent_30%)]"></div>
-      <div class="relative mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
-        <aside class="glass-panel w-full rounded-3xl border border-white/10 p-5 lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:w-72">
-          <div class="flex items-center gap-3">
-            <img src="{{ url_for('static', path='/img/logo.svg') }}" alt="GitSync logo" class="h-11 w-11 rounded-2xl" />
-            <div>
-              <p class="text-xs uppercase tracking-[0.3em] text-indigo-200/70">Activity Mirror</p>
-              <h1 class="text-2xl font-semibold tracking-tight text-white">GitSync</h1>
-            </div>
+  <body class="font-body text-on-surface antialiased">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-[260px] border-r border-white/5 bg-[#181b29] backdrop-blur-xl flex flex-col py-8 space-y-6 z-50">
+      <div class="px-8 space-y-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-[0px_0px_16px_rgba(99,102,241,0.3)]">
+            <span class="material-symbols-outlined text-white">sync</span>
           </div>
-
-          <p class="mt-6 text-sm leading-6 text-slate-300">
-            Daily GitLab to GitHub synchronization with a local dashboard, history and one-click manual runs.
-          </p>
-
-          <nav class="mt-8 space-y-2">
-            {% set current_path = request.url.path %}
-            <a href="/" class="nav-link {% if current_path == '/' %}nav-link-active{% endif %}">Dashboard</a>
-            <a href="/activity" class="nav-link {% if current_path.startswith('/activity') %}nav-link-active{% endif %}">Activity</a>
-            <a href="/settings" class="nav-link {% if current_path.startswith('/settings') %}nav-link-active{% endif %}">Settings</a>
-          </nav>
-
-          <div class="mt-8 rounded-3xl border border-white/10 bg-white/5 p-4">
-            <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Modes</p>
-            <div class="mt-3 space-y-3 text-sm text-slate-200">
-              <div>
-                <p class="font-medium text-white">GitHub Action</p>
-                <p class="text-slate-400">Scheduled daily sync for headless execution.</p>
-              </div>
-              <div>
-                <p class="font-medium text-white">Local Web UI</p>
-                <p class="text-slate-400">Configuration, monitoring and on-demand sync.</p>
-              </div>
-            </div>
+          <div>
+            <h1 class="text-2xl font-headline font-bold tracking-tight text-primary">GitSync</h1>
+            <p class="text-[10px] uppercase tracking-widest text-on-surface/40 font-headline">Activity Mirror</p>
           </div>
-        </aside>
-
-        <main class="flex-1 space-y-6 pb-8">
-          {% block content %}{% endblock %}
-        </main>
+        </div>
+        <p class="text-xs text-on-surface-variant leading-relaxed pt-4 italic">Daily GitLab to GitHub synchronization</p>
       </div>
-    </div>
+
+      <nav class="flex-1 pt-4 space-y-2">
+        {% set current_path = request.url.path %}
+        <a href="/" class="flex items-center gap-4 mx-4 px-4 py-2.5 rounded-full transition-all {% if current_path == '/' %}gradient-primary text-white shadow-lg shadow-indigo-500/20{% else %}text-on-surface/60 hover:text-primary hover:bg-white/5{% endif %}">
+          <span class="material-symbols-outlined">dashboard</span>
+          <span class="font-headline font-medium">Dashboard</span>
+        </a>
+        <a href="/activity" class="flex items-center gap-4 mx-4 px-4 py-2.5 rounded-full transition-all {% if current_path.startswith('/activity') %}gradient-primary text-white shadow-lg shadow-indigo-500/20{% else %}text-on-surface/60 hover:text-primary hover:bg-white/5{% endif %}">
+          <span class="material-symbols-outlined">analytics</span>
+          <span class="font-headline font-medium">Activity</span>
+        </a>
+        <a href="/settings" class="flex items-center gap-4 mx-4 px-4 py-2.5 rounded-full transition-all {% if current_path.startswith('/settings') %}gradient-primary text-white shadow-lg shadow-indigo-500/20{% else %}text-on-surface/60 hover:text-primary hover:bg-white/5{% endif %}">
+          <span class="material-symbols-outlined">settings</span>
+          <span class="font-headline font-medium">Settings</span>
+        </a>
+      </nav>
+
+      <div class="px-4 mt-auto">
+        <div class="bg-surface-container rounded-lg p-4 space-y-4 border border-white/5">
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+              <span class="text-xs font-medium text-on-surface">GitHub Action Scheduled</span>
+            </div>
+            <div class="flex items-center gap-3 opacity-60">
+              <span class="material-symbols-outlined text-secondary text-sm">dns</span>
+              <span class="text-xs font-medium text-on-surface">Local Web UI</span>
+            </div>
+          </div>
+          <div class="h-px bg-white/5"></div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-tertiary dot-success"></div>
+            <span class="text-[10px] text-on-surface-variant uppercase tracking-wider">System Operational</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="ml-[260px] min-h-screen">
+      <header class="sticky top-0 h-20 px-8 flex justify-between items-center bg-[#060816]/80 backdrop-blur-md z-40">
+        <h2 class="font-headline text-xl font-bold text-on-surface">{% block page_title %}{% endblock %}</h2>
+      </header>
+      <div class="p-8 space-y-8 max-w-[1200px] mx-auto">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+    <!-- Background glow -->
+    <div class="fixed top-[-10%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary/5 blur-[120px] pointer-events-none -z-10"></div>
+    <div class="fixed bottom-[-10%] left-[20%] w-[30vw] h-[30vw] rounded-full bg-secondary/5 blur-[100px] pointer-events-none -z-10"></div>
   </body>
 </html>

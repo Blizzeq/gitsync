@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
+from gitsync.core.models import EventType
 from gitsync.web.dependencies import get_storage, get_templates
 
 router = APIRouter()
@@ -28,6 +29,8 @@ async def dashboard_view(request: Request) -> HTMLResponse:
     snapshot = await storage.get_dashboard_snapshot(days=30)
     recent_runs = await storage.get_recent_sync_runs(limit=5)
     max_count = max((item.count for item in snapshot.daily_activity), default=0)
+    commit_count = await storage.count_activity(event_type=EventType.COMMIT)
+    mr_count = await storage.count_activity(event_type=EventType.MR_MERGED)
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -35,6 +38,8 @@ async def dashboard_view(request: Request) -> HTMLResponse:
             "snapshot": snapshot,
             "recent_runs": recent_runs,
             "max_count": max_count,
+            "commit_count": commit_count,
+            "mr_count": mr_count,
             "next_sync_at": _next_daily_sync(),
         },
     )

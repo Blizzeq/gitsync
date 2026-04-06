@@ -1,52 +1,62 @@
-<section
+<div
   id="sync-status"
-  class="glass-panel rounded-3xl p-5"
+  class="glass-panel p-8 rounded-lg flex flex-col h-full bg-surface-container/20"
   hx-get="/partials/sync-status"
   hx-trigger="every 30s"
   hx-swap="outerHTML"
 >
-  <p class="label">Sync status</p>
-  <div class="mt-3 flex items-start justify-between gap-4">
-    <div>
-      <h2 class="text-2xl font-semibold text-white">
-        {% if last_sync %}
-          {{ last_sync.status|title }}
-        {% else %}
-          Waiting for first run
-        {% endif %}
-      </h2>
-      <p class="mt-2 text-sm text-slate-400">
-        {% if last_sync and last_sync.finished_at %}
-          Finished at {{ last_sync.finished_at.strftime('%Y-%m-%d %H:%M UTC') }}
-        {% else %}
-          No completed sync recorded yet.
-        {% endif %}
-      </p>
+  <h3 class="font-headline text-lg font-semibold mb-6">Sync status</h3>
+  <div class="space-y-6 flex-1">
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-on-surface-variant">Last Run Status</span>
+      {% if last_sync %}
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold
+        {% if last_sync.status == 'success' %}bg-tertiary/10 text-tertiary border border-tertiary/20
+        {% elif last_sync.status == 'failed' %}bg-error/10 text-error border border-error/20
+        {% else %}bg-yellow-400/10 text-yellow-400 border border-yellow-400/20{% endif %}">
+        <span class="w-1.5 h-1.5 rounded-full
+          {% if last_sync.status == 'success' %}bg-tertiary dot-success
+          {% elif last_sync.status == 'failed' %}bg-error dot-error
+          {% else %}bg-yellow-400 dot-running{% endif %}"></span>
+        {{ last_sync.status|title }}
+      </div>
+      {% else %}
+      <span class="text-xs text-on-surface-variant/60">Waiting for first run</span>
+      {% endif %}
     </div>
+
+    {% if last_sync and last_sync.finished_at %}
+    <div class="space-y-1">
+      <p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-label">Timestamp</p>
+      <p class="text-sm font-mono text-on-surface">{{ last_sync.finished_at.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+    </div>
+    {% endif %}
+
+    {% if next_sync_at %}
+    <div class="space-y-1">
+      <p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-label">Next Scheduled Sync</p>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-sm">schedule</span>
+        <p class="text-sm text-on-surface">{{ next_sync_at.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+      </div>
+    </div>
+    {% endif %}
+
     {% if last_sync %}
-    <span class="status-pill status-{{ last_sync.status }}">{{ last_sync.events_synced }} events</span>
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-on-surface-variant">Event Count</span>
+      <span class="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold">{{ last_sync.events_synced }} events</span>
+    </div>
     {% endif %}
   </div>
 
-  <div class="mt-6 rounded-3xl border border-white/8 bg-slate-950/35 p-4 text-sm text-slate-300">
-    <p>
-      Next scheduled action:
-      <span class="font-medium text-white">
-        {% if next_sync_at %}
-          {{ next_sync_at.strftime('%Y-%m-%d %H:%M UTC') }}
-        {% else %}
-          Calculated on page refresh
-        {% endif %}
-      </span>
-    </p>
-  </div>
-
   <button
-    class="primary-button mt-6 w-full justify-center px-5 py-3"
+    class="mt-8 w-full py-4 rounded-full gradient-primary text-white font-headline font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/30 transition-all active:scale-[0.98]"
     hx-post="/api/sync"
     hx-target="#sync-status"
     hx-swap="outerHTML"
   >
+    <span class="material-symbols-outlined">sync</span>
     Sync now
   </button>
 
@@ -55,4 +65,4 @@
       {% include "partials/toast.html" %}
     {% endwith %}
   {% endif %}
-</section>
+</div>

@@ -66,11 +66,11 @@ def test_web_routes_render_and_accept_settings(test_settings) -> None:
         )
 
     assert dashboard.status_code == 200
-    assert "Contribution rhythm" in dashboard.text
+    assert "System Overview" in dashboard.text
     assert activity.status_code == 200
     assert "Fix database pooling" in activity.text
     assert settings.status_code == 200
-    assert "Runtime settings" in settings.text
+    assert "Configuration" in settings.text
     assert health.json() == {"status": "ok"}
     assert settings_update.status_code == 200
     assert "Configuration saved" in settings_update.text

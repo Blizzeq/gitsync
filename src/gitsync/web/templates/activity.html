@@ -1,49 +1,78 @@
 {% extends "base.html" %}
 
 {% block title %}GitSync Activity{% endblock %}
+{% block page_title %}Activity{% endblock %}
 
 {% block content %}
-<section class="glass-panel rounded-3xl p-5">
-  <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-    <div>
-      <p class="label">Activity log</p>
-      <h2 class="mt-2 text-3xl font-semibold text-white">Mirrored GitLab history</h2>
-      <p class="mt-2 text-sm text-slate-400">Filter by event type, search by project or title, then load more rows without leaving the page.</p>
-    </div>
-    <p class="text-sm text-slate-400">{{ total }} events stored</p>
+<!-- Page Header -->
+<div class="flex justify-between items-end">
+  <div>
+    <h3 class="text-4xl font-bold font-headline text-on-surface tracking-tight mb-2">Mirrored GitLab history</h3>
+    <p class="text-on-surface-variant text-lg font-light">Filter by event type, search by project or title</p>
   </div>
-
-  <form method="get" action="/activity" class="mt-6 grid gap-3 rounded-3xl border border-white/8 bg-slate-950/30 p-4 lg:grid-cols-[0.8fr_1.4fr_auto]">
-    <label class="space-y-2 text-sm text-slate-300">
-      <span>Type</span>
-      <select name="event_type" class="field">
-        <option value="">All events</option>
-        {% for item in event_types %}
-        <option value="{{ item.value }}" {% if selected_event_type == item.value %}selected{% endif %}>{{ item.value }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label class="space-y-2 text-sm text-slate-300">
-      <span>Search</span>
-      <input type="search" name="search" value="{{ search }}" placeholder="Search by project or title" class="field" />
-    </label>
-    <button type="submit" class="primary-button h-11 px-5">Apply filters</button>
-  </form>
-
-  <div class="mt-6 overflow-hidden rounded-3xl border border-white/8 bg-slate-950/35">
-    <table class="min-w-full divide-y divide-white/8 text-left text-sm">
-      <thead class="bg-white/5 text-slate-300">
-        <tr>
-          <th class="px-4 py-3 font-medium">Type</th>
-          <th class="px-4 py-3 font-medium">Project</th>
-          <th class="px-4 py-3 font-medium">Title</th>
-          <th class="px-4 py-3 font-medium">Timestamp</th>
-        </tr>
-      </thead>
-      <tbody id="activity-rows" class="divide-y divide-white/6">
-        {% include "partials/activity_rows.html" %}
-      </tbody>
-    </table>
+  <div class="glass-panel ghost-border rounded-full px-6 py-2 flex items-center gap-3">
+    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+    <span class="text-sm font-headline font-semibold text-primary">{{ total }} events stored</span>
   </div>
-</section>
+</div>
+
+<!-- Filter Bar -->
+<form method="get" action="/activity" class="glass-panel ghost-border rounded-xl p-4 flex flex-wrap items-center gap-4">
+  <div class="flex-1 min-w-[300px] relative">
+    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40">search</span>
+    <input
+      type="search"
+      name="search"
+      value="{{ search }}"
+      placeholder="Search by project or title"
+      class="w-full bg-surface-container-lowest/50 rounded-lg pl-12 pr-4 py-3 border-none text-sm text-on-surface focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+    />
+  </div>
+  <div class="relative">
+    <select name="event_type" class="appearance-none bg-surface-container-lowest/50 rounded-lg px-6 py-3 border-none text-sm text-on-surface-variant focus:ring-1 focus:ring-primary/30 outline-none pr-12 cursor-pointer min-w-[160px]">
+      <option value="">All events</option>
+      {% for item in event_types %}
+      <option value="{{ item.value }}" {% if selected_event_type == item.value %}selected{% endif %}>{{ item.value }}</option>
+      {% endfor %}
+    </select>
+    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/40">expand_more</span>
+  </div>
+  <button type="submit" class="gradient-primary text-white font-headline font-bold px-8 py-3 rounded-full hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all flex items-center gap-2 text-sm">
+    <span class="material-symbols-outlined text-sm">filter_list</span>
+    Apply filters
+  </button>
+</form>
+
+<!-- Data Table -->
+<div class="glass-panel ghost-border rounded-xl overflow-hidden shadow-2xl">
+  <table class="w-full text-left border-collapse">
+    <thead class="bg-surface-container-low/50">
+      <tr class="text-[10px] uppercase tracking-[0.2em] font-bold text-on-surface-variant/60">
+        <th class="px-8 py-5">Type</th>
+        <th class="px-8 py-5">Project</th>
+        <th class="px-8 py-5">Title</th>
+        <th class="px-8 py-5 text-right">Timestamp</th>
+      </tr>
+    </thead>
+    <tbody id="activity-rows" class="divide-y divide-white/5">
+      {% include "partials/activity_rows.html" %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Load More -->
+<div id="load-more-container" class="flex flex-col items-center gap-4">
+  {% if has_more %}
+  <button
+    class="bg-surface-container-high/40 hover:bg-surface-container-high/80 transition-colors border border-white/5 text-on-surface-variant text-sm font-headline font-bold px-10 py-3 rounded-xl flex items-center gap-2"
+    hx-get="/activity/rows?page={{ page + 1 }}&per_page={{ per_page }}&event_type={{ selected_event_type }}&search={{ search|urlencode }}"
+    hx-target="#activity-rows"
+    hx-swap="beforeend"
+  >
+    <span class="material-symbols-outlined text-sm">autorenew</span>
+    Load more
+  </button>
+  {% endif %}
+  <p class="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">Showing {{ records|length }} of {{ total }} events</p>
+</div>
 {% endblock %}

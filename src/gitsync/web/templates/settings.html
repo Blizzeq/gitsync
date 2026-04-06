@@ -1,88 +1,153 @@
 {% extends "base.html" %}
 
 {% block title %}GitSync Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
 
 {% block content %}
-<section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-  <div class="glass-panel rounded-3xl p-5">
-    <p class="label">Configuration</p>
-    <h2 class="mt-2 text-3xl font-semibold text-white">Runtime settings</h2>
-    <p class="mt-2 text-sm text-slate-400">The form updates the in-memory settings and stores non-secret preferences in SQLite for the dashboard.</p>
-
-    <form
-      class="mt-6 space-y-4"
-      hx-post="/settings"
-      hx-target="#settings-toast"
-      hx-swap="innerHTML"
-    >
-      <div class="grid gap-4 lg:grid-cols-2">
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>GitLab URL</span>
-          <input name="gitlab_url" value="{{ settings_data.gitlab_url }}" class="field" />
-        </label>
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>GitLab username</span>
-          <input name="gitlab_username" value="{{ settings_data.gitlab_username }}" class="field" />
-        </label>
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>GitLab token</span>
-          <input type="password" name="gitlab_token" placeholder="Leave blank to keep current value" class="field" />
-        </label>
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>GitHub repository</span>
-          <input name="github_repo" value="{{ settings_data.github_repo }}" class="field" />
-        </label>
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>GitHub token</span>
-          <input type="password" name="github_token" placeholder="Leave blank to keep current value" class="field" />
-        </label>
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>GitHub email</span>
-          <input name="github_email" value="{{ settings_data.github_email }}" class="field" />
-        </label>
-        <label class="space-y-2 text-sm text-slate-300 lg:col-span-2">
-          <span>GitHub branch</span>
-          <input name="github_branch" value="{{ settings_data.github_branch }}" class="field" />
-        </label>
+<div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
+  <!-- Left Column: Configuration Form -->
+  <div class="lg:col-span-6 space-y-10">
+    <section>
+      <div class="mb-8">
+        <h2 class="text-4xl font-headline font-bold text-on-surface tracking-tight mb-2">Configuration</h2>
+        <h3 class="text-xl font-headline text-secondary tracking-tight">Runtime settings</h3>
+        <p class="text-on-surface-variant mt-2 max-w-lg">Updates in-memory settings and stores preferences in SQLite for persistent synchronization across sessions.</p>
       </div>
 
-      <div class="grid gap-3 rounded-3xl border border-white/8 bg-slate-950/30 p-4 lg:grid-cols-2">
-        <label class="checkbox-line"><input type="checkbox" name="sync_commits" {% if settings_data.sync_commits %}checked{% endif %} /> <span>Sync commits</span></label>
-        <label class="checkbox-line"><input type="checkbox" name="sync_merge_requests" {% if settings_data.sync_merge_requests %}checked{% endif %} /> <span>Sync merge requests</span></label>
-        <label class="checkbox-line"><input type="checkbox" name="sync_issues" {% if settings_data.sync_issues %}checked{% endif %} /> <span>Sync issues</span></label>
-        <label class="checkbox-line"><input type="checkbox" name="sync_reviews" {% if settings_data.sync_reviews %}checked{% endif %} /> <span>Sync reviews</span></label>
-      </div>
+      <form class="space-y-8" hx-post="/settings" hx-target="#settings-toast" hx-swap="innerHTML">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-on-surface-variant/70 px-1">GitLab URL</label>
+            <input name="gitlab_url" value="{{ settings_data.gitlab_url }}" type="text" class="bg-surface-container-lowest border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary/30 transition-shadow" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-on-surface-variant/70 px-1">GitLab username</label>
+            <input name="gitlab_username" value="{{ settings_data.gitlab_username }}" type="text" class="bg-surface-container-lowest border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary/30 transition-shadow" />
+          </div>
+          <div class="flex flex-col gap-2 md:col-span-2">
+            <label class="text-sm font-medium text-on-surface-variant/70 px-1">GitLab token</label>
+            <input name="gitlab_token" type="password" placeholder="Leave blank to keep current" class="bg-surface-container-lowest border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary/30 transition-shadow" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-on-surface-variant/70 px-1">GitHub repository</label>
+            <input name="github_repo" value="{{ settings_data.github_repo }}" type="text" class="bg-surface-container-lowest border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary/30 transition-shadow" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-on-surface-variant/70 px-1">GitHub email</label>
+            <input name="github_email" value="{{ settings_data.github_email }}" type="email" class="bg-surface-container-lowest border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary/30 transition-shadow" />
+          </div>
+          <div class="flex flex-col gap-2 md:col-span-2">
+            <label class="text-sm font-medium text-on-surface-variant/70 px-1">GitHub token</label>
+            <input name="github_token" type="password" placeholder="Leave blank to keep current" class="bg-surface-container-lowest border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary/30 transition-shadow" />
+          </div>
+          <div class="flex flex-col gap-2 md:col-span-2">
+            <label class="text-sm font-medium text-on-surface-variant/70 px-1">GitHub branch</label>
+            <input name="github_branch" value="{{ settings_data.github_branch }}" type="text" class="bg-surface-container-lowest border-none text-on-surface rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary/30 transition-shadow" />
+          </div>
+        </div>
 
-      <div class="flex flex-wrap gap-3">
-        <button type="submit" class="primary-button px-5 py-3">Save settings</button>
-        <button
-          type="button"
-          class="secondary-button px-5 py-3"
-          hx-post="/settings/test"
-          hx-target="#settings-toast"
-          hx-swap="innerHTML"
-        >
-          Test connection
-        </button>
-      </div>
-    </form>
+        <!-- Sync Options -->
+        <div class="glass-panel rounded-lg p-8">
+          <h4 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant/50 mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">sync</span>
+            Sync Synchronization Logic
+          </h4>
+          <div class="grid grid-cols-2 gap-y-6 gap-x-12">
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <input type="checkbox" name="sync_commits" {% if settings_data.sync_commits %}checked{% endif %} class="w-5 h-5 rounded border-none bg-surface-container-highest text-primary focus:ring-offset-surface focus:ring-primary/50" />
+              <span class="text-on-surface group-hover:text-primary transition-colors">Sync commits</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <input type="checkbox" name="sync_merge_requests" {% if settings_data.sync_merge_requests %}checked{% endif %} class="w-5 h-5 rounded border-none bg-surface-container-highest text-primary focus:ring-offset-surface focus:ring-primary/50" />
+              <span class="text-on-surface group-hover:text-primary transition-colors">Sync merge requests</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <input type="checkbox" name="sync_issues" {% if settings_data.sync_issues %}checked{% endif %} class="w-5 h-5 rounded border-none bg-surface-container-highest text-primary focus:ring-offset-surface focus:ring-primary/50" />
+              <span class="text-on-surface-variant/60 group-hover:text-on-surface transition-colors">Sync issues</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+              <input type="checkbox" name="sync_reviews" {% if settings_data.sync_reviews %}checked{% endif %} class="w-5 h-5 rounded border-none bg-surface-container-highest text-primary focus:ring-offset-surface focus:ring-primary/50" />
+              <span class="text-on-surface-variant/60 group-hover:text-on-surface transition-colors">Sync reviews</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center gap-4 pt-4">
+          <button type="submit" class="gradient-primary text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+            Save settings
+          </button>
+          <button
+            type="button"
+            class="glass-panel text-on-surface px-8 py-3 rounded-full font-semibold hover:bg-white/10 transition-all border border-white/10"
+            hx-post="/settings/test"
+            hx-target="#settings-toast"
+            hx-swap="innerHTML"
+          >
+            Test connection
+          </button>
+        </div>
+      </form>
+    </section>
   </div>
 
-  <div class="space-y-6">
+  <!-- Right Column: Status & Rules -->
+  <div class="lg:col-span-4 space-y-8">
+    <!-- Toast area -->
     <div id="settings-toast">
       {% if toast %}
-        {% include "partials/toast.html" %}
+        {% with tone=toast.tone, message=toast.message %}
+          {% include "partials/toast.html" %}
+        {% endwith %}
+      {% else %}
+      <div class="glass-panel rounded-lg p-6 border-dashed border-white/10 flex flex-col items-center justify-center min-h-[120px] text-center">
+        <span class="material-symbols-outlined text-on-surface-variant/30 text-3xl mb-2">analytics</span>
+        <p class="text-on-surface-variant/50 text-sm">Waiting for synchronization trigger...</p>
+        <p class="text-[10px] uppercase tracking-tighter text-on-surface-variant/30 mt-1">Status: IDLE</p>
+      </div>
       {% endif %}
     </div>
-    <div class="glass-panel rounded-3xl p-5">
-      <p class="label">GitHub graph rules</p>
-      <ul class="mt-4 space-y-3 text-sm text-slate-300">
-        <li>Commits must land on the default branch.</li>
-        <li>Commit email must be linked to the GitHub account.</li>
-        <li>The repository cannot be a fork.</li>
-        <li>Private contributions must be enabled on the GitHub profile.</li>
-      </ul>
+
+    <!-- GitHub Graph Rules -->
+    <div class="bg-surface-container rounded-lg p-8 relative overflow-hidden group">
+      <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+        <span class="material-symbols-outlined text-[120px]">account_tree</span>
+      </div>
+      <div class="relative z-10">
+        <h4 class="text-xl font-headline font-semibold text-secondary mb-6 flex items-center gap-3">
+          <span class="material-symbols-outlined text-secondary">info</span>
+          GitHub graph rules
+        </h4>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
+            <span class="text-sm text-on-surface-variant leading-relaxed">Commits must land on the default branch to be visible on your contribution graph.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
+            <span class="text-sm text-on-surface-variant leading-relaxed">Commit email must be linked and verified on your GitHub account settings.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
+            <span class="text-sm text-on-surface-variant leading-relaxed">Synchronization repository cannot be a fork of another repository.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
+            <span class="text-sm text-on-surface-variant leading-relaxed">Private contributions must be enabled on your public profile settings.</span>
+          </li>
+        </ul>
+        <div class="mt-10 p-4 rounded-xl bg-surface-container-lowest/50 border border-white/5">
+          <div class="flex items-center gap-4">
+            <div class="p-2 bg-primary/10 rounded-lg">
+              <span class="material-symbols-outlined text-primary">lightbulb</span>
+            </div>
+            <div class="text-xs text-on-surface-variant italic leading-tight">
+              Tip: Create a new private repository specifically for GitSync to keep your main profile clean.
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</section>
+</div>
 {% endblock %}
