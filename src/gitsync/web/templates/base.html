@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}GitSync{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}" />
+  </head>
+  <body class="min-h-screen bg-[var(--app-bg)] text-slate-100 antialiased">
+    <div class="relative min-h-screen overflow-hidden">
+      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.12),_transparent_30%)]"></div>
+      <div class="relative mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
+        <aside class="glass-panel w-full rounded-3xl border border-white/10 p-5 lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:w-72">
+          <div class="flex items-center gap-3">
+            <img src="{{ url_for('static', path='/img/logo.svg') }}" alt="GitSync logo" class="h-11 w-11 rounded-2xl" />
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-indigo-200/70">Activity Mirror</p>
+              <h1 class="text-2xl font-semibold tracking-tight text-white">GitSync</h1>
+            </div>
+          </div>
+
+          <p class="mt-6 text-sm leading-6 text-slate-300">
+            Daily GitLab to GitHub synchronization with a local dashboard, history and one-click manual runs.
+          </p>
+
+          <nav class="mt-8 space-y-2">
+            {% set current_path = request.url.path %}
+            <a href="/" class="nav-link {% if current_path == '/' %}nav-link-active{% endif %}">Dashboard</a>
+            <a href="/activity" class="nav-link {% if current_path.startswith('/activity') %}nav-link-active{% endif %}">Activity</a>
+            <a href="/settings" class="nav-link {% if current_path.startswith('/settings') %}nav-link-active{% endif %}">Settings</a>
+          </nav>
+
+          <div class="mt-8 rounded-3xl border border-white/10 bg-white/5 p-4">
+            <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Modes</p>
+            <div class="mt-3 space-y-3 text-sm text-slate-200">
+              <div>
+                <p class="font-medium text-white">GitHub Action</p>
+                <p class="text-slate-400">Scheduled daily sync for headless execution.</p>
+              </div>
+              <div>
+                <p class="font-medium text-white">Local Web UI</p>
+                <p class="text-slate-400">Configuration, monitoring and on-demand sync.</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="flex-1 space-y-6 pb-8">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

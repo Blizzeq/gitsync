@@ -1,0 +1,15 @@
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.venv/
+__pycache__/
+*.pyc
+.env
+dist/
+build/
+htmlcov/
+.DS_Store
+*.sqlite3
+*.db
+/.gitsync-worktree/.DS_Store

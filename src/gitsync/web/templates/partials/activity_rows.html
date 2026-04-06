@@ -1,0 +1,36 @@
+{% for record in records %}
+<tr class="bg-transparent text-slate-200">
+  <td class="px-4 py-4 align-top">
+    <span class="status-pill status-inline">{{ record.event_type }}</span>
+  </td>
+  <td class="px-4 py-4 align-top text-slate-300">{{ record.project_name }}</td>
+  <td class="px-4 py-4 align-top">
+    <div class="space-y-1">
+      <p class="font-medium text-white">{{ record.title }}</p>
+      {% if record.url %}
+      <a href="{{ record.url }}" target="_blank" rel="noreferrer" class="text-xs text-indigo-300 transition hover:text-indigo-200">Open source link</a>
+      {% endif %}
+    </div>
+  </td>
+  <td class="px-4 py-4 align-top text-slate-400">{{ record.event_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+</tr>
+{% else %}
+<tr>
+  <td colspan="4" class="px-4 py-8 text-center text-sm text-slate-400">No activity matches the current filters.</td>
+</tr>
+{% endfor %}
+
+<tr id="load-more" hx-swap-oob="true">
+  <td colspan="4" class="px-4 py-5 text-center">
+    {% if has_more %}
+    <button
+      class="secondary-button mx-auto px-5 py-3"
+      hx-get="/activity/rows?page={{ page + 1 }}&per_page={{ per_page }}&event_type={{ selected_event_type }}&search={{ search|urlencode }}"
+      hx-target="#activity-rows"
+      hx-swap="beforeend"
+    >
+      Load more
+    </button>
+    {% endif %}
+  </td>
+</tr>

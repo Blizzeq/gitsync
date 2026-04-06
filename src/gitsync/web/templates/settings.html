@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}GitSync Settings{% endblock %}
+
+{% block content %}
+<section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+  <div class="glass-panel rounded-3xl p-5">
+    <p class="label">Configuration</p>
+    <h2 class="mt-2 text-3xl font-semibold text-white">Runtime settings</h2>
+    <p class="mt-2 text-sm text-slate-400">The form updates the in-memory settings and stores non-secret preferences in SQLite for the dashboard.</p>
+
+    <form
+      class="mt-6 space-y-4"
+      hx-post="/settings"
+      hx-target="#settings-toast"
+      hx-swap="innerHTML"
+    >
+      <div class="grid gap-4 lg:grid-cols-2">
+        <label class="space-y-2 text-sm text-slate-300">
+          <span>GitLab URL</span>
+          <input name="gitlab_url" value="{{ settings_data.gitlab_url }}" class="field" />
+        </label>
+        <label class="space-y-2 text-sm text-slate-300">
+          <span>GitLab username</span>
+          <input name="gitlab_username" value="{{ settings_data.gitlab_username }}" class="field" />
+        </label>
+        <label class="space-y-2 text-sm text-slate-300">
+          <span>GitLab token</span>
+          <input type="password" name="gitlab_token" placeholder="Leave blank to keep current value" class="field" />
+        </label>
+        <label class="space-y-2 text-sm text-slate-300">
+          <span>GitHub repository</span>
+          <input name="github_repo" value="{{ settings_data.github_repo }}" class="field" />
+        </label>
+        <label class="space-y-2 text-sm text-slate-300">
+          <span>GitHub token</span>
+          <input type="password" name="github_token" placeholder="Leave blank to keep current value" class="field" />
+        </label>
+        <label class="space-y-2 text-sm text-slate-300">
+          <span>GitHub email</span>
+          <input name="github_email" value="{{ settings_data.github_email }}" class="field" />
+        </label>
+        <label class="space-y-2 text-sm text-slate-300 lg:col-span-2">
+          <span>GitHub branch</span>
+          <input name="github_branch" value="{{ settings_data.github_branch }}" class="field" />
+        </label>
+      </div>
+
+      <div class="grid gap-3 rounded-3xl border border-white/8 bg-slate-950/30 p-4 lg:grid-cols-2">
+        <label class="checkbox-line"><input type="checkbox" name="sync_commits" {% if settings_data.sync_commits %}checked{% endif %} /> <span>Sync commits</span></label>
+        <label class="checkbox-line"><input type="checkbox" name="sync_merge_requests" {% if settings_data.sync_merge_requests %}checked{% endif %} /> <span>Sync merge requests</span></label>
+        <label class="checkbox-line"><input type="checkbox" name="sync_issues" {% if settings_data.sync_issues %}checked{% endif %} /> <span>Sync issues</span></label>
+        <label class="checkbox-line"><input type="checkbox" name="sync_reviews" {% if settings_data.sync_reviews %}checked{% endif %} /> <span>Sync reviews</span></label>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="primary-button px-5 py-3">Save settings</button>
+        <button
+          type="button"
+          class="secondary-button px-5 py-3"
+          hx-post="/settings/test"
+          hx-target="#settings-toast"
+          hx-swap="innerHTML"
+        >
+          Test connection
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="space-y-6">
+    <div id="settings-toast">
+      {% if toast %}
+        {% include "partials/toast.html" %}
+      {% endif %}
+    </div>
+    <div class="glass-panel rounded-3xl p-5">
+      <p class="label">GitHub graph rules</p>
+      <ul class="mt-4 space-y-3 text-sm text-slate-300">
+        <li>Commits must land on the default branch.</li>
+        <li>Commit email must be linked to the GitHub account.</li>
+        <li>The repository cannot be a fork.</li>
+        <li>Private contributions must be enabled on the GitHub profile.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

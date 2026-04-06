@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}GitSync Activity{% endblock %}
+
+{% block content %}
+<section class="glass-panel rounded-3xl p-5">
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <p class="label">Activity log</p>
+      <h2 class="mt-2 text-3xl font-semibold text-white">Mirrored GitLab history</h2>
+      <p class="mt-2 text-sm text-slate-400">Filter by event type, search by project or title, then load more rows without leaving the page.</p>
+    </div>
+    <p class="text-sm text-slate-400">{{ total }} events stored</p>
+  </div>
+
+  <form method="get" action="/activity" class="mt-6 grid gap-3 rounded-3xl border border-white/8 bg-slate-950/30 p-4 lg:grid-cols-[0.8fr_1.4fr_auto]">
+    <label class="space-y-2 text-sm text-slate-300">
+      <span>Type</span>
+      <select name="event_type" class="field">
+        <option value="">All events</option>
+        {% for item in event_types %}
+        <option value="{{ item.value }}" {% if selected_event_type == item.value %}selected{% endif %}>{{ item.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2 text-sm text-slate-300">
+      <span>Search</span>
+      <input type="search" name="search" value="{{ search }}" placeholder="Search by project or title" class="field" />
+    </label>
+    <button type="submit" class="primary-button h-11 px-5">Apply filters</button>
+  </form>
+
+  <div class="mt-6 overflow-hidden rounded-3xl border border-white/8 bg-slate-950/35">
+    <table class="min-w-full divide-y divide-white/8 text-left text-sm">
+      <thead class="bg-white/5 text-slate-300">
+        <tr>
+          <th class="px-4 py-3 font-medium">Type</th>
+          <th class="px-4 py-3 font-medium">Project</th>
+          <th class="px-4 py-3 font-medium">Title</th>
+          <th class="px-4 py-3 font-medium">Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="activity-rows" class="divide-y divide-white/6">
+        {% include "partials/activity_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

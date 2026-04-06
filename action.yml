@@ -1,0 +1,36 @@
+name: GitSync
+description: Mirror GitLab activity into a GitHub repository for contribution tracking.
+branding:
+  color: blue
+  icon: refresh-cw
+inputs:
+  gitlab-token:
+    description: GitLab personal access token with read_api scope
+    required: true
+  gitlab-username:
+    description: GitLab username
+    required: true
+  github-email:
+    description: GitHub email linked to the contribution graph
+    required: true
+  python-version:
+    description: Python version to use
+    required: false
+    default: '3.11'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+    - shell: bash
+      run: pip install .
+    - shell: bash
+      env:
+        GITSYNC_GITLAB_TOKEN: ${{ inputs.gitlab-token }}
+        GITSYNC_GITLAB_USERNAME: ${{ inputs.gitlab-username }}
+        GITSYNC_GITHUB_EMAIL: ${{ inputs.github-email }}
+        GITSYNC_GITHUB_TOKEN: ${{ github.token }}
+        GITSYNC_GITHUB_REPO: ${{ github.repository }}
+      run: python -m gitsync sync

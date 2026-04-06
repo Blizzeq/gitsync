@@ -1,0 +1,58 @@
+<section
+  id="sync-status"
+  class="glass-panel rounded-3xl p-5"
+  hx-get="/partials/sync-status"
+  hx-trigger="every 30s"
+  hx-swap="outerHTML"
+>
+  <p class="label">Sync status</p>
+  <div class="mt-3 flex items-start justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-semibold text-white">
+        {% if last_sync %}
+          {{ last_sync.status|title }}
+        {% else %}
+          Waiting for first run
+        {% endif %}
+      </h2>
+      <p class="mt-2 text-sm text-slate-400">
+        {% if last_sync and last_sync.finished_at %}
+          Finished at {{ last_sync.finished_at.strftime('%Y-%m-%d %H:%M UTC') }}
+        {% else %}
+          No completed sync recorded yet.
+        {% endif %}
+      </p>
+    </div>
+    {% if last_sync %}
+    <span class="status-pill status-{{ last_sync.status }}">{{ last_sync.events_synced }} events</span>
+    {% endif %}
+  </div>
+
+  <div class="mt-6 rounded-3xl border border-white/8 bg-slate-950/35 p-4 text-sm text-slate-300">
+    <p>
+      Next scheduled action:
+      <span class="font-medium text-white">
+        {% if next_sync_at %}
+          {{ next_sync_at.strftime('%Y-%m-%d %H:%M UTC') }}
+        {% else %}
+          Calculated on page refresh
+        {% endif %}
+      </span>
+    </p>
+  </div>
+
+  <button
+    class="primary-button mt-6 w-full justify-center px-5 py-3"
+    hx-post="/api/sync"
+    hx-target="#sync-status"
+    hx-swap="outerHTML"
+  >
+    Sync now
+  </button>
+
+  {% if toast %}
+    {% with tone=toast.tone, message=toast.message %}
+      {% include "partials/toast.html" %}
+    {% endwith %}
+  {% endif %}
+</section>
