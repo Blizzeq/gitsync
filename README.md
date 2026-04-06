@@ -12,8 +12,8 @@ If you work on GitLab at your job, your GitHub profile looks empty. GitSync fixe
 
 | Source | Synced as | Example commit |
 |--------|-----------|----------------|
-| Your commits (excluding merge commits) | `[commit]` | `[commit] axpo-pl/scripts: fix timezone handling` |
-| Your merged MRs | `[mr-merged]` | `[mr-merged] axpo-pl/scripts!145: add OAuth2 provider` |
+| Your commits (excluding merge commits) | `[commit]` | `[commit] my-org/backend: fix timezone handling` |
+| Your merged MRs | `[mr-merged]` | `[mr-merged] my-org/backend!145: add OAuth2 provider` |
 
 Auto-generated merge commits (`Merge branch 'x' into 'main'`) and generic push events are filtered out automatically.
 
