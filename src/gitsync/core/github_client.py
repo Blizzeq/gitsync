@@ -24,6 +24,18 @@ class GitHubClient:
         self._worktree = worktree
         self._tempdir: str | None = None
 
+    async def get_existing_messages(self) -> set[str]:
+        """Return commit messages already present in the target repo.
+
+        Used to avoid creating duplicate contributions when the SQLite
+        database is ephemeral (e.g. in GitHub Actions).
+        """
+        repo_dir = await self._ensure_repo()
+        result = await self._run_git_result(repo_dir, "log", "--format=%s", "--all")
+        if result.returncode != 0:
+            return set()
+        return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
     async def create_contribution(self, event: GitLabEvent) -> str:
         """Create one empty commit mirroring a GitLab activity event."""
         logger.debug("Creating contribution for %s: %s", event.event_type, event.title)

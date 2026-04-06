@@ -24,10 +24,14 @@ class FakeGitLabClient:
 class FakeGitHubClient:
     """Collect mirrored commits without touching git."""
 
-    def __init__(self) -> None:
+    def __init__(self, existing_messages: set[str] | None = None) -> None:
         self.created_messages: list[str] = []
         self.push_called = False
         self.cleaned_up = False
+        self._existing = existing_messages or set()
+
+    async def get_existing_messages(self) -> set[str]:
+        return self._existing
 
     async def create_contribution(self, event: GitLabEvent) -> str:
         self.created_messages.append(event.commit_message)
@@ -77,7 +81,7 @@ async def test_sync_engine_mirrors_only_new_events(test_settings) -> None:
 
 
 @pytest.mark.asyncio
-async def test_sync_engine_skips_known_events(test_settings) -> None:
+async def test_sync_engine_skips_known_events_in_db(test_settings) -> None:
     """Previously stored events should not create duplicate contributions."""
     storage = Storage(test_settings.db_path)
     await storage.initialize()
@@ -101,4 +105,29 @@ async def test_sync_engine_skips_known_events(test_settings) -> None:
 
     assert result.events_synced == 0
     assert github_client.created_messages == []
+    assert github_client.push_called is False
+
+
+@pytest.mark.asyncio
+async def test_sync_engine_skips_events_already_in_git(test_settings) -> None:
+    """Events whose commit message already exists in git should be skipped."""
+    storage = Storage(test_settings.db_path)
+    event = GitLabEvent(
+        source_id="commit:abc",
+        event_type=EventType.COMMIT,
+        title="Fix database pooling",
+        project_name="group/project",
+        timestamp=datetime(2026, 4, 5, 10, 0, tzinfo=UTC),
+    )
+    github_client = FakeGitHubClient(
+        existing_messages={"[commit] group/project: Fix database pooling"}
+    )
+    engine = SyncEngine(
+        gitlab_client=FakeGitLabClient([event]),
+        github_client=github_client,
+        storage=storage,
+    )
+    result = await engine.run_sync()
+
+    assert result.events_synced == 0
     assert github_client.push_called is False

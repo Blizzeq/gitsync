@@ -40,13 +40,20 @@ class SyncEngine:
         last_sync = after or await self.storage.get_last_sync_time()
         logger.info("Starting sync (after=%s, before=%s)", last_sync, before)
         try:
+            existing_messages = await self.github_client.get_existing_messages()
+            logger.info(
+                "Found %d existing commits in target repo", len(existing_messages)
+            )
             events = await self.gitlab_client.fetch_all_activity(
                 after=last_sync, before=before
             )
             logger.info("Fetched %d events from GitLab", len(events))
             for event in events:
                 if await self.storage.activity_exists(event.source_id):
-                    logger.debug("Skipping known event %s", event.source_id)
+                    logger.debug("Skipping known event %s (in DB)", event.source_id)
+                    continue
+                if event.commit_message in existing_messages:
+                    logger.debug("Skipping known event %s (in git)", event.source_id)
                     continue
                 sha = await self.github_client.create_contribution(event)
                 await self.storage.save_activity(
