@@ -13,3 +13,4 @@ htmlcov/
 *.sqlite3
 *.db
 /.gitsync-worktree/.DS_Store
+.claude/

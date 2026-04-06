@@ -51,20 +51,21 @@ class GitLabClient:
         after: datetime | None = None,
         before: datetime | None = None,
     ) -> list[GitLabEvent]:
-        """Collect and normalize all configured activity types."""
+        """Collect commits (from commits API) and merged MRs (from MR API).
+
+        The events API is intentionally skipped because it produces noisy
+        duplicates ("Push event", ``unknown/project``) that overlap with
+        the dedicated commits and merge-request endpoints.
+        """
         events: list[GitLabEvent] = []
-        events.extend(await self.fetch_user_events(after=after, before=before))
-        logger.debug("Collected %d user events", len(events))
-        if self.settings.sync_merge_requests:
-            mr_events = await self.fetch_merge_requests(
-                created_after=after, updated_after=after
-            )
-            logger.debug("Collected %d merge request events", len(mr_events))
-            events.extend(mr_events)
         if self.settings.sync_commits:
             commit_events = await self.fetch_user_commits(after=after, before=before)
             logger.debug("Collected %d commit events", len(commit_events))
             events.extend(commit_events)
+        if self.settings.sync_merge_requests:
+            mr_events = await self.fetch_merge_requests(updated_after=after)
+            logger.debug("Collected %d merge request events", len(mr_events))
+            events.extend(mr_events)
         deduplicated = deduplicate_events(events)
         logger.info(
             "Total activity: %d events (%d after deduplication)",
@@ -90,50 +91,36 @@ class GitLabClient:
 
     async def fetch_merge_requests(
         self,
-        created_after: datetime | None = None,
         updated_after: datetime | None = None,
     ) -> list[GitLabEvent]:
-        """Fetch authored merge requests for created and merged activity."""
+        """Fetch authored merge requests that have been merged."""
         if self.settings.gitlab_username is None:
             return []
         params: dict[str, Any] = {
             "scope": "all",
+            "state": "merged",
             "author_username": self.settings.gitlab_username,
             "order_by": "updated_at",
             "sort": "asc",
         }
-        if created_after is not None:
-            params["created_after"] = created_after.astimezone(UTC).isoformat()
         if updated_after is not None:
             params["updated_after"] = updated_after.astimezone(UTC).isoformat()
         events: list[GitLabEvent] = []
         async for payload in self._paginate("/merge_requests", params=params):
-            project_name = payload.get("references", {}).get("full", "unknown/project")
-            created_at = self._parse_datetime(payload["created_at"])
             merged_at = payload.get("merged_at")
-            iid = payload["iid"]
-            web_url = payload.get("web_url")
+            if not merged_at:
+                continue
+            project_name = payload.get("references", {}).get("full", "unknown/project")
             events.append(
                 GitLabEvent(
-                    source_id=f"mr-created:{payload['project_id']}:{iid}",
-                    event_type=EventType.MR_CREATED,
+                    source_id=f"mr-merged:{payload['project_id']}:{payload['iid']}",
+                    event_type=EventType.MR_MERGED,
                     title=payload["title"],
                     project_name=project_name,
-                    timestamp=created_at,
-                    url=web_url,
+                    timestamp=self._parse_datetime(merged_at),
+                    url=payload.get("web_url"),
                 )
             )
-            if merged_at:
-                events.append(
-                    GitLabEvent(
-                        source_id=f"mr-merged:{payload['project_id']}:{iid}",
-                        event_type=EventType.MR_MERGED,
-                        title=payload["title"],
-                        project_name=project_name,
-                        timestamp=self._parse_datetime(merged_at),
-                        url=web_url,
-                    )
-                )
         return events
 
     async def fetch_user_commits(
@@ -141,10 +128,16 @@ class GitLabClient:
         after: datetime | None = None,
         before: datetime | None = None,
     ) -> list[GitLabEvent]:
-        """Fetch authored commits across user projects."""
+        """Fetch authored commits across user projects.
+
+        Auto-generated merge commits (``Merge branch ...``) are filtered
+        out because they duplicate the actual work already tracked by
+        individual commits and merged MR events.
+        """
         if self.settings.gitlab_username is None:
             return []
         projects = await self._fetch_user_projects()
+        logger.info("Scanning commits across %d projects", len(projects))
         events: list[GitLabEvent] = []
         for project in projects:
             params: dict[str, Any] = {
@@ -157,18 +150,33 @@ class GitLabClient:
                 params["until"] = before.astimezone(UTC).isoformat()
             path = f"/projects/{project['id']}/repository/commits"
             async for payload in self._paginate(path, params=params):
-                sha = payload["id"]
+                title: str = payload["title"]
+                if self._is_noise_commit(title, payload.get("parent_ids", [])):
+                    continue
                 events.append(
                     GitLabEvent(
-                        source_id=f"commit:{sha}",
+                        source_id=f"commit:{payload['id']}",
                         event_type=EventType.COMMIT,
-                        title=payload["title"],
+                        title=title,
                         project_name=project["path_with_namespace"],
                         timestamp=self._parse_datetime(payload["created_at"]),
                         url=payload.get("web_url"),
                     )
                 )
         return events
+
+    @staticmethod
+    def _is_noise_commit(title: str, parent_ids: list[str]) -> bool:
+        """Return True for auto-generated merge commits and empty titles."""
+        if not title or title == "Push event":
+            return True
+        lowered = title.lower()
+        is_merge = len(parent_ids) > 1
+        if is_merge and lowered.startswith("merge branch "):
+            return True
+        if is_merge and lowered.startswith("merge remote-tracking branch "):
+            return True
+        return False
 
     async def get_current_user(self) -> dict[str, Any]:
         """Fetch the current GitLab user profile for connection checks."""
@@ -270,10 +278,14 @@ class GitLabClient:
         return self._user_id
 
     async def _fetch_user_projects(self) -> list[dict[str, Any]]:
-        user_id = await self._get_user_id()
+        """List all projects the authenticated user is a member of.
+
+        Uses ``/projects?membership=true`` instead of ``/users/:id/projects``
+        because the latter omits group-level projects.
+        """
         projects: list[dict[str, Any]] = []
         async for payload in self._paginate(
-            f"/users/{user_id}/projects",
+            "/projects",
             params={"membership": True, "simple": True, "order_by": "last_activity_at"},
         ):
             projects.append(payload)

@@ -17,34 +17,27 @@ def _json_response(data: Any) -> httpx.Response:
 
 
 @pytest.mark.asyncio
-async def test_gitlab_client_fetches_and_deduplicates_activity(test_settings) -> None:
-    """GitLab client should merge events, merge requests and commits into one stream."""
+async def test_gitlab_client_fetches_commits_and_merged_mrs(test_settings) -> None:
+    """Activity should contain real commits and merged MRs only."""
 
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
-        if path.endswith("/users"):
-            return _json_response([{"id": 7, "username": "jakub"}])
-        if path.endswith("/users/7/events"):
+        if path.endswith("/repository/commits"):
             return _json_response(
                 [
                     {
-                        "id": 1,
-                        "created_at": "2026-04-05T08:00:00Z",
-                        "target_type": "Issue",
-                        "action_name": "opened",
-                        "target_iid": 21,
-                        "target_title": "Safari login bug",
-                        "target_url": "https://gitlab.com/group/project/-/issues/21",
-                        "project": {"path_with_namespace": "group/project"},
+                        "id": "deadbeef",
+                        "title": "Refactor API endpoints",
+                        "created_at": "2026-04-05T09:00:00Z",
+                        "parent_ids": ["abc123"],
+                        "web_url": "https://gitlab.com/group/project/-/commit/deadbeef",
                     },
                     {
-                        "id": 2,
-                        "created_at": "2026-04-05T09:00:00Z",
-                        "push_data": {
-                            "commit_to": "deadbeef",
-                            "commit_title": "Refactor API endpoints",
-                        },
-                        "project": {"path_with_namespace": "group/project"},
+                        "id": "aabbccdd",
+                        "title": "Merge branch 'feature' into 'main'",
+                        "created_at": "2026-04-05T09:30:00Z",
+                        "parent_ids": ["abc123", "def456"],
+                        "web_url": "https://gitlab.com/group/project/-/commit/aabbccdd",
                     },
                 ]
             )
@@ -59,22 +52,20 @@ async def test_gitlab_client_fetches_and_deduplicates_activity(test_settings) ->
                         "merged_at": "2026-04-05T12:00:00Z",
                         "web_url": "https://gitlab.com/group/project/-/merge_requests/34",
                         "references": {"full": "group/project!34"},
-                    }
-                ]
-            )
-        if path.endswith("/users/7/projects"):
-            return _json_response([{"id": 11, "path_with_namespace": "group/project"}])
-        if path.endswith("/projects/11/repository/commits"):
-            return _json_response(
-                [
+                    },
                     {
-                        "id": "deadbeef",
-                        "title": "Refactor API endpoints",
-                        "created_at": "2026-04-05T09:00:00Z",
-                        "web_url": "https://gitlab.com/group/project/-/commit/deadbeef",
-                    }
+                        "iid": 35,
+                        "project_id": 11,
+                        "title": "WIP: draft MR",
+                        "created_at": "2026-04-05T11:00:00Z",
+                        "merged_at": None,
+                        "web_url": "https://gitlab.com/group/project/-/merge_requests/35",
+                        "references": {"full": "group/project!35"},
+                    },
                 ]
             )
+        if path == "/api/v4/projects":
+            return _json_response([{"id": 11, "path_with_namespace": "group/project"}])
         raise AssertionError(f"Unexpected path: {path}")
 
     transport = httpx.MockTransport(handler)
@@ -88,11 +79,19 @@ async def test_gitlab_client_fetches_and_deduplicates_activity(test_settings) ->
             before=datetime(2026, 4, 6, tzinfo=UTC),
         )
 
-    assert len(events) == 4
-    assert {event.event_type for event in events} == {
-        EventType.COMMIT,
-        EventType.ISSUE_CREATED,
-        EventType.MR_CREATED,
-        EventType.MR_MERGED,
-    }
-    assert events[0].project_name == "group/project"
+    assert len(events) == 2
+    types = {e.event_type for e in events}
+    assert types == {EventType.COMMIT, EventType.MR_MERGED}
+    commit = next(e for e in events if e.event_type == EventType.COMMIT)
+    assert commit.title == "Refactor API endpoints"
+    assert commit.project_name == "group/project"
+
+
+@pytest.mark.asyncio
+async def test_noise_commit_filter() -> None:
+    """Merge commits and empty titles should be filtered out."""
+    assert GitLabClient._is_noise_commit("Merge branch 'x' into 'main'", ["a", "b"])
+    assert GitLabClient._is_noise_commit("Push event", [])
+    assert GitLabClient._is_noise_commit("", [])
+    assert not GitLabClient._is_noise_commit("Fix database pooling", ["a"])
+    assert not GitLabClient._is_noise_commit("Merge branch docs", ["a"])

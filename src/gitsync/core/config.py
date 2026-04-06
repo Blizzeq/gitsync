@@ -34,8 +34,8 @@ class Settings(BaseSettings):
 
     sync_commits: bool = True
     sync_merge_requests: bool = True
-    sync_issues: bool = True
-    sync_reviews: bool = True
+    sync_issues: bool = False
+    sync_reviews: bool = False
 
     git_author_name: str = "GitSync"
 
