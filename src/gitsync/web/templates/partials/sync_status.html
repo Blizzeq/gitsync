@@ -51,14 +51,28 @@
   </div>
 
   <button
-    class="mt-8 w-full py-4 rounded-full gradient-primary text-white font-headline font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/30 transition-all active:scale-[0.98]"
+    id="sync-btn"
+    class="sync-btn mt-8 w-full py-4 rounded-full gradient-primary text-white font-headline font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/30 transition-all active:scale-[0.98]"
     hx-post="/api/sync"
     hx-target="#sync-status"
     hx-swap="outerHTML"
+    hx-disabled-elt="this"
   >
-    <span class="material-symbols-outlined">sync</span>
-    Sync now
+    <span class="material-symbols-outlined sync-icon">sync</span>
+    <span class="sync-label">Sync now</span>
+    <span class="material-symbols-outlined sync-spinner hidden animate-spin">progress_activity</span>
+    <span class="sync-loading hidden">Syncing...</span>
   </button>
+  <script>
+    document.body.addEventListener('htmx:beforeRequest', function(e) {
+      if (e.detail.elt.id === 'sync-btn') {
+        e.detail.elt.querySelector('.sync-icon').classList.add('hidden');
+        e.detail.elt.querySelector('.sync-label').classList.add('hidden');
+        e.detail.elt.querySelector('.sync-spinner').classList.remove('hidden');
+        e.detail.elt.querySelector('.sync-loading').classList.remove('hidden');
+      }
+    });
+  </script>
 
   {% if toast %}
     {% with tone=toast.tone, message=toast.message %}

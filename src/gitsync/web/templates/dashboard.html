@@ -42,21 +42,29 @@
     <div class="flex justify-between items-center mb-10">
       <h3 class="font-headline text-lg font-semibold flex items-center gap-2">
         <span class="material-symbols-outlined text-primary">bar_chart</span>
-        30-day activity
+        90-day activity
       </h3>
       <div class="text-xs text-on-surface-variant flex gap-4">
         <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> Commits</span>
         <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span> MRs</span>
       </div>
     </div>
-    <div class="flex-1 flex items-end justify-between gap-1 h-48">
+    <div class="flex items-end gap-[2px]" style="height: 200px;">
       {% for item in snapshot.daily_activity %}
-      {% set height = 8 if max_count == 0 else 8 + ((item.count * 92) // max_count) %}
-      <div class="w-full bg-gradient-to-t from-primary/20 to-primary rounded-t-sm transition-all duration-500 hover:opacity-80 cursor-pointer bar-fill" style="height: {{ height }}%"></div>
+      {% if item.count > 0 %}
+        {% set px_height = 12 + ((item.count * 180) // max_count) if max_count > 0 else 20 %}
+      {% else %}
+        {% set px_height = 4 %}
+      {% endif %}
+      <div
+        class="flex-1 min-w-[2px] rounded-t-sm transition-all duration-300 cursor-pointer {% if item.count > 0 %}bg-gradient-to-t from-primary/30 to-primary hover:from-primary/50 hover:to-primary{% else %}bg-white/[0.04]{% endif %}"
+        style="height: {{ px_height }}px;"
+        title="{{ item.date }}: {{ item.count }} events"
+      ></div>
       {% endfor %}
     </div>
     <div class="mt-4 flex justify-between text-[10px] uppercase tracking-tighter text-on-surface-variant/40 font-label">
-      <span>30 days ago</span>
+      <span>90 days ago</span>
       <span>Today</span>
     </div>
   </div>

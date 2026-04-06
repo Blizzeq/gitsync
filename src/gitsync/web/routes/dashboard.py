@@ -26,7 +26,7 @@ async def dashboard_view(request: Request) -> HTMLResponse:
     """Render the dashboard page."""
     storage = get_storage(request)
     templates = get_templates(request)
-    snapshot = await storage.get_dashboard_snapshot(days=30)
+    snapshot = await storage.get_dashboard_snapshot(days=90)
     recent_runs = await storage.get_recent_sync_runs(limit=5)
     max_count = max((item.count for item in snapshot.daily_activity), default=0)
     commit_count = await storage.count_activity(event_type=EventType.COMMIT)

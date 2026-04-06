@@ -1,7 +1,7 @@
 {% for record in records %}
 <tr class="group hover:bg-white/5 transition-colors">
   <td class="px-8 py-6">
-    <span class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase border
+    <span class="inline-block whitespace-nowrap px-3 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wide border
       {% if record.event_type == 'mr-merged' %}bg-tertiary/10 text-tertiary border-tertiary/20
       {% else %}bg-primary/10 text-primary border-primary/20{% endif %}">{{ record.event_type }}</span>
   </td>
