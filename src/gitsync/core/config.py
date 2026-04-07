@@ -46,15 +46,15 @@ class Settings(BaseSettings):
     def require_sync_configuration(self) -> None:
         """Ensure the settings contain the minimum data required for syncing."""
         missing = []
-        if self.gitlab_token is None:
+        if not self.gitlab_token:
             missing.append("GITSYNC_GITLAB_TOKEN")
-        if self.gitlab_username is None:
+        if not self.gitlab_username:
             missing.append("GITSYNC_GITLAB_USERNAME")
-        if self.github_repo is None:
+        if not self.github_repo:
             missing.append("GITSYNC_GITHUB_REPO")
-        if self.github_token is None:
+        if not self.github_token:
             missing.append("GITSYNC_GITHUB_TOKEN")
-        if self.github_email is None:
+        if not self.github_email:
             missing.append("GITSYNC_GITHUB_EMAIL")
         if missing:
             joined = ", ".join(missing)

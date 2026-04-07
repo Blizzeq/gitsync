@@ -94,7 +94,7 @@ class GitLabClient:
         updated_after: datetime | None = None,
     ) -> list[GitLabEvent]:
         """Fetch authored merge requests that have been merged."""
-        if self.settings.gitlab_username is None:
+        if not self.settings.gitlab_username:
             return []
         params: dict[str, Any] = {
             "scope": "all",
@@ -134,7 +134,7 @@ class GitLabClient:
         out because they duplicate the actual work already tracked by
         individual commits and merged MR events.
         """
-        if self.settings.gitlab_username is None:
+        if not self.settings.gitlab_username:
             return []
         projects = await self._fetch_user_projects()
         logger.info("Scanning commits across %d projects", len(projects))
@@ -211,10 +211,11 @@ class GitLabClient:
         params: dict[str, Any] | None = None,
     ) -> httpx.Response:
         client = await self._get_client()
+        retryable = {408, 429, 500, 502, 503, 504}
         last_error: Exception | None = None
         for attempt in range(self._max_retries + 1):
             response = await client.request(method, path, params=params)
-            if response.status_code != 429:
+            if response.status_code not in retryable:
                 response.raise_for_status()
                 return response
             retry_after = response.headers.get("Retry-After")
@@ -224,7 +225,8 @@ class GitLabClient:
                 else self._backoff_base_seconds * (2**attempt)
             )
             logger.warning(
-                "Rate limited on %s %s, retrying in %.1fs (attempt %d/%d)",
+                "HTTP %d on %s %s, retrying in %.1fs (attempt %d/%d)",
+                response.status_code,
                 method,
                 path,
                 delay,
@@ -232,7 +234,7 @@ class GitLabClient:
                 self._max_retries,
             )
             last_error = httpx.HTTPStatusError(
-                "GitLab rate limit exceeded",
+                f"GitLab returned {response.status_code}",
                 request=response.request,
                 response=response,
             )
@@ -264,7 +266,7 @@ class GitLabClient:
     async def _get_user_id(self) -> int:
         if self._user_id is not None:
             return self._user_id
-        if self.settings.gitlab_username is None:
+        if not self.settings.gitlab_username:
             raise ValueError("GITSYNC_GITLAB_USERNAME must be configured")
         response = await self._request(
             "GET",
